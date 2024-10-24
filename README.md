@@ -26,8 +26,8 @@ Make sure you have the following installed:
 1. Clone the repository:
 
    ```bash
-   git clone https://github.com/yourusername/nestjs-rabbitmq-example.git
-   cd nestjs-rabbitmq-example
+   git clone git@github.com:sugarsaixan/demo-mq.git
+   cd demo-mq
    ```
 
 2. Install the dependencies:
