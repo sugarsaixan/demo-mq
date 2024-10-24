@@ -1,85 +1,175 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+Here’s a `README.md` file template for the simple NestJS app using RabbitMQ for publishing and subscribing to messages:
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+---
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://coveralls.io/github/nestjs/nest?branch=master" target="_blank"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#9" alt="Coverage" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+# NestJS RabbitMQ Publisher-Subscriber Example
 
-## Description
+This project demonstrates how to implement a simple **publisher-subscriber** architecture using **RabbitMQ** and **NestJS microservices**.
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## Features
 
-## Project setup
+- **Publisher**: Sends messages to RabbitMQ.
+- **Subscriber**: Listens for messages from RabbitMQ and processes them.
+- **RabbitMQ Integration**: Uses RabbitMQ as the messaging broker.
+- **Management UI**: Includes RabbitMQ management interface for monitoring.
+
+## Prerequisites
+
+Make sure you have the following installed:
+
+- [Node.js](https://nodejs.org/) (v12 or higher)
+- [Docker](https://www.docker.com/) (for running RabbitMQ in a container)
+- [RabbitMQ](https://www.rabbitmq.com/) (you can either install locally or use Docker)
+
+## Installation
+
+1. Clone the repository:
+
+   ```bash
+   git clone https://github.com/yourusername/nestjs-rabbitmq-example.git
+   cd nestjs-rabbitmq-example
+   ```
+
+2. Install the dependencies:
+
+   ```bash
+   npm install
+   ```
+
+3. Run RabbitMQ using Docker:
+
+   ```bash
+   docker run -d --name rabbitmq -p 5672:5672 -p 15672:15672 rabbitmq:management
+   ```
+
+   - RabbitMQ management UI will be available at: `http://localhost:15672`
+   - Default RabbitMQ credentials:  
+     - Username: `guest`  
+     - Password: `guest`
+
+## Running the Application
+
+To start the application with both HTTP and RabbitMQ microservice:
 
 ```bash
-$ npm install
+npm run start
 ```
 
-## Compile and run the project
+The application will run on `http://localhost:3000`.
+
+## Usage
+
+1. **Publish a Message:**
+
+   You can trigger the publishing of a message by visiting this URL in your browser or using `curl`:
+
+   ```bash
+   http://localhost:3000/publish
+   ```
+
+   The publisher sends a message to RabbitMQ, and the subscriber listens to it.
+
+2. **Check the Logs:**
+
+   You should see the following message logged in your terminal by the subscriber when the message is received:
+
+   ```
+   Message received: { text: 'Hello from RabbitMQ!' }
+   ```
+
+3. **Access the RabbitMQ Management UI:**
+
+   You can monitor the RabbitMQ queue and messages using the RabbitMQ Management UI at `http://localhost:15672`. After publishing a message, you can check if the queue `nest_queue` exists and observe the message flow.
+
+## Project Structure
 
 ```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+src/
+├── app.controller.ts      # Defines a simple controller to trigger message publishing
+├── app.module.ts          # Main module where RabbitMQ microservices are configured
+├── publisher/publisher.service.ts   # Publishes messages to RabbitMQ
+├── subscriber/subscriber.controller.ts # Subscribes to messages from RabbitMQ
+├── main.ts                # Application bootstrap (starts both HTTP server and microservice)
 ```
 
-## Run tests
+## Code Explanation
+
+### Publisher
+
+- The publisher sends a message to RabbitMQ via the `publishMessage` method in `PublisherService`.
+
+```typescript
+// publisher.service.ts
+import { Inject, Injectable } from '@nestjs/common';
+import { ClientProxy } from '@nestjs/microservices';
+
+@Injectable()
+export class PublisherService {
+  constructor(
+    @Inject('RABBITMQ_SERVICE') private readonly client: ClientProxy,
+  ) {}
+
+  async publishMessage(data: any) {
+    this.client.emit('message_printed', data);  // Sending message to RabbitMQ
+  }
+}
+```
+
+### Subscriber
+
+- The subscriber listens for messages on the `message_printed` event and processes them.
+
+```typescript
+// subscriber.controller.ts
+import { Controller } from '@nestjs/common';
+import { EventPattern, Payload } from '@nestjs/microservices';
+
+@Controller()
+export class SubscriberController {
+  @EventPattern('message_printed')
+  handleMessagePrinted(@Payload() data: any) {
+    console.log('Message received:', data);  // Processing the message
+  }
+}
+```
+
+### Microservice Configuration
+
+In `main.ts`, the RabbitMQ microservice is set up and connected to a queue `nest_queue`.
+
+```typescript
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
+
+  const microservice = app.connectMicroservice({
+    transport: Transport.RMQ,
+    options: {
+      urls: ['amqp://localhost:5672'],
+      queue: 'nest_queue',
+      queueOptions: { durable: false },
+    },
+  });
+
+  await app.startAllMicroservices();
+  await app.listen(3000);  // HTTP server
+}
+bootstrap();
+```
+
+## Running Tests
+
+You can run the unit tests using the following command:
 
 ```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+npm run test
 ```
-
-## Resources
-
-Check out a few resources that may come in handy when working with NestJS:
-
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
 
 ## License
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
+
+### Notes:
+- If you're using a remote RabbitMQ instance or a different port, update the RabbitMQ URL in the microservice configuration.
+- The queue name is set to `nest_queue`. You can change this as per your requirements.
